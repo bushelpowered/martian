@@ -126,7 +126,7 @@ func TestQueryStringFilterWithQuery(t *testing.T) {
 
 func TestFilterFromJSON(t *testing.T) {
 	msg := []byte(`{
-		"body.Filter": {
+		"requestbody.Filter": {
       "scope": ["request", "response"],
       "value": "true",
       "modifier": {
@@ -179,7 +179,7 @@ func TestFilterFromJSON(t *testing.T) {
 
 func TestElseCondition(t *testing.T) {
 	msg := []byte(`{
-		"body.Filter": {
+	"requestbody.Filter": {
       "scope": ["request", "response"],
       "value": "true",
       "modifier": {

@@ -22,10 +22,10 @@ import (
 	"github.com/google/martian/v3/parse"
 )
 
-var noop = martian.Noop("body.Filter")
+var noop = martian.Noop("responsebody.Filter")
 
 func init() {
-	parse.Register("body.Filter", filterFromJSON)
+	parse.Register("responsebody.Filter", filterFromJSON)
 }
 
 // Filter runs modifiers iff the request query parameter for name matches value.

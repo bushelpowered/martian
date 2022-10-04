@@ -70,8 +70,7 @@ func (m *Matcher) MatchRequest(req *http.Request) bool {
 }
 
 // MatchResponse evaluates a response and returns whether or not
-// the request that resulted in that response contains a querystring param that matches the provided name
-// and value.
+// the request that resulted in that response has a body which contains the value
 func (m *Matcher) MatchResponse(res *http.Response) bool {
 	req_uuid := res.Request.Header.Get("X-Request-UUID")
 	if req_uuid == "" {
