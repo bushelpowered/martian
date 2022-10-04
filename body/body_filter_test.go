@@ -58,7 +58,7 @@ func TestQueryStringFilterWithQuery(t *testing.T) {
 	f.SetRequestModifier(tm)
 	f.SetResponseModifier(tm)
 
-	req, err := http.NewRequest("GET", "http://martian.local?match=any", strings.NewReader("hello"))
+	req, err := http.NewRequest("GET", "http://martian.local", strings.NewReader("this is a hello world"))
 	if err != nil {
 		t.Fatalf("http.NewRequest(): got %v, want no error", err)
 	}
@@ -101,8 +101,8 @@ func TestQueryStringFilterWithQuery(t *testing.T) {
 	}
 	tm.Reset()
 
-	// Explicitly do not match POST data.
-	req, err = http.NewRequest("GET", "http://martian.local", strings.NewReader("match=value"))
+	// Explicitly match POST data.
+	req, err = http.NewRequest("GET", "http://martian.local", strings.NewReader("match=hello"))
 	if err != nil {
 		t.Fatalf("http.NewRequest(): got %v, want no error", err)
 	}
@@ -115,11 +115,11 @@ func TestQueryStringFilterWithQuery(t *testing.T) {
 		t.Errorf("ModifyResponse(): got %v, want no error", err)
 	}
 
-	if tm.RequestModified() {
-		t.Error("tm.RequestModified(): got true, want false")
+	if !tm.RequestModified() {
+		t.Error("tm.RequestModified(): got false, want true")
 	}
-	if tm.ResponseModified() {
-		t.Error("tm.ResponseModified(): got true, want false")
+	if !tm.ResponseModified() {
+		t.Error("tm.ResponseModified(): got false, want true")
 	}
 	tm.Reset()
 }
@@ -149,7 +149,7 @@ func TestFilterFromJSON(t *testing.T) {
 		t.Fatal("reqmod: got nil, want not nil")
 	}
 
-	req, err := http.NewRequest("GET", "https://martian.test?param=true", strings.NewReader("this valie is set to true"))
+	req, err := http.NewRequest("GET", "https://martian.test", strings.NewReader("this valie is set to true"))
 	if err != nil {
 		t.Fatalf("http.NewRequest(): got %v, want no error", err)
 	}

@@ -20,15 +20,18 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	uuid "github.com/google/uuid"
 )
 
 // Matcher is a conditonal evalutor of query string parameters
 // to be used in structs that take conditions.
 type Matcher struct {
-	value string
+	value     string
+	val_cache map[string]bool
 }
 
-// NewMatcher builds a new querystring matcher
+// NewMatcher builds a new body matcher
 func NewMatcher(value string) *Matcher {
 	return &Matcher{value: value}
 }
@@ -46,15 +49,38 @@ func (m *Matcher) MatchRequest(req *http.Request) bool {
 		log.Printf("Error reading body: %v", err)
 		return false
 	}
+	req.Body.Close()
 
 	// And now set a new body, which will simulate the same data we read:
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-	return strings.Contains(string(body), m.value)
+
+	req_uuid := req.Header.Get("X-Request-UUID")
+	if req_uuid == "" {
+		new_uuid := uuid.New()
+		req_uuid = new_uuid.String()
+		req.Header.Set("X-Request-UUID", req_uuid)
+	}
+
+	if m.val_cache == nil {
+		m.val_cache = map[string]bool{}
+	}
+
+	m.val_cache[req_uuid] = strings.Contains(string(body), m.value)
+	return m.val_cache[req_uuid]
 }
 
 // MatchResponse evaluates a response and returns whether or not
 // the request that resulted in that response contains a querystring param that matches the provided name
 // and value.
 func (m *Matcher) MatchResponse(res *http.Response) bool {
-	return m.MatchRequest(res.Request)
+	req_uuid := res.Request.Header.Get("X-Request-UUID")
+	if req_uuid == "" {
+		return false
+	}
+
+	if ret, ok := m.val_cache[req_uuid]; ok {
+		delete(m.val_cache, req_uuid)
+		return ret
+	}
+	return false
 }
