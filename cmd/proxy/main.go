@@ -231,6 +231,7 @@ import (
 	_ "github.com/google/martian/v3/priority"
 	_ "github.com/google/martian/v3/querystring"
 	_ "github.com/google/martian/v3/requestbody"
+	_ "github.com/google/martian/v3/responsebody"
 	_ "github.com/google/martian/v3/skip"
 	_ "github.com/google/martian/v3/stash"
 	_ "github.com/google/martian/v3/static"
