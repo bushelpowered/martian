@@ -16,13 +16,16 @@ package body
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
-
-	uuid "github.com/google/uuid"
 )
+
+const X_HASH_HEADER = "X-Request-Hash"
 
 // Matcher is a conditonal evalutor of query string parameters
 // to be used in structs that take conditions.
@@ -54,31 +57,39 @@ func (m *Matcher) MatchRequest(req *http.Request) bool {
 	// And now set a new body, which will simulate the same data we read:
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
-	req_uuid := req.Header.Get("X-Request-UUID")
-	if req_uuid == "" {
-		new_uuid := uuid.New()
-		req_uuid = new_uuid.String()
-		req.Header.Set("X-Request-UUID", req_uuid)
+	req_hash := req.Header.Get(X_HASH_HEADER)
+	if req_hash == "" {
+		req_hash = hashBody(string(body))
+		req.Header.Set(X_HASH_HEADER, req_hash)
 	}
 
 	if m.val_cache == nil {
 		m.val_cache = map[string]bool{}
 	}
 
-	m.val_cache[req_uuid] = strings.Contains(string(body), m.value)
-	return m.val_cache[req_uuid]
+	if _, ok := m.val_cache[req_hash]; ok && os.Getenv("ONLY_UNQIUE_BODY") == "true" {
+		m.val_cache[req_hash] = false
+		return m.val_cache[req_hash]
+	}
+
+	m.val_cache[req_hash] = strings.Contains(string(body), m.value)
+	return m.val_cache[req_hash]
+}
+
+func hashBody(body string) string {
+	s := sha256.New()
+	return base64.URLEncoding.EncodeToString(s.Sum([]byte(body)))
 }
 
 // MatchResponse evaluates a response and returns whether or not
 // the request that resulted in that response has a body which contains the value
 func (m *Matcher) MatchResponse(res *http.Response) bool {
-	req_uuid := res.Request.Header.Get("X-Request-UUID")
-	if req_uuid == "" {
+	req_hash := res.Request.Header.Get(X_HASH_HEADER)
+	if req_hash == "" {
 		return false
 	}
 
-	if ret, ok := m.val_cache[req_uuid]; ok {
-		delete(m.val_cache, req_uuid)
+	if ret, ok := m.val_cache[req_hash]; ok {
 		return ret
 	}
 	return false
